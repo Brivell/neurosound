@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Audio datasets (>1 GB each — not tracked)
+new-esc50/
+new-esc50-augmented/
+
+# Trained model — large binary (105 MB, use Git LFS or download from Releases)
+Backend/Models/spectrogram_model.keras
+
+# Database — ephemeral, generated at runtime
+Backend/neurosound.db
+
+# Environment secrets
+Backend/.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Frontend dev artifacts
+Frontend/temporary\ screenshots/
+Frontend/temporary screenshots/
+
+# Claude Code metadata
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db

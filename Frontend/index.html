@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroSound — AI-Powered Acoustic Intelligence</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Syne + DM Mono + Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'ns-bg':      '#0A0E1A',
+            'ns-surface': '#111827',
+            'ns-elevated':'#1C2333',
+            'ns-cyan':    '#00D4FF',
+            'ns-violet':  '#7C3AED',
+          },
+          fontFamily: {
+            syne:   ['Syne', 'sans-serif'],
+            mono:   ['"DM Mono"', 'monospace'],
+            outfit: ['Outfit', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ─── CSS Variables ─────────────────────────────────── */
+    :root {
+      --bg-primary:    #0A0E1A;
+      --bg-secondary:  #111827;
+      --bg-elevated:   #1C2333;
+      --accent-cyan:   #00D4FF;
+      --accent-violet: #7C3AED;
+      --success:       #10B981;
+      --warning:       #F59E0B;
+      --error:         #EF4444;
+      --text-primary:  #F9FAFB;
+      --text-muted:    #6B7280;
+      --border:        rgba(0,212,255,0.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ─── Grain texture ─────────────────────────────────── */
+    .grain {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ─── Page system ───────────────────────────────────── */
+    .page { min-height: 100vh; opacity: 1; }
+    .page.hidden { display: none !important; }
+
+    /* ─── Nav ───────────────────────────────────────────── */
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 64px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(10,14,26,0.82);
+      border-bottom: 1px solid rgba(0,212,255,0.08);
+    }
+    .navbar-inner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 1.75rem; height: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 0.625rem;
+      background: none; border: none; cursor: pointer;
+      text-decoration: none;
+    }
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1.125rem;
+      color: var(--text-primary);
+    }
+    .nav-links { display: flex; align-items: center; gap: 2rem; }
+    .nav-link {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.875rem; font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding-bottom: 3px;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .nav-link:hover { color: var(--text-primary); }
+    .nav-link.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent-cyan);
+    }
+
+    /* ─── Hero ──────────────────────────────────────────── */
+    .hero {
+      position: relative; min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      overflow: hidden; padding-top: 64px;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 100% 70% at 50% -10%, rgba(0,212,255,0.22) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 60% at 95% 110%, rgba(124,58,237,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 45% at 8% 85%, rgba(0,212,255,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,212,255,0.04) 0%, transparent 70%),
+        var(--bg-primary);
+    }
+    /* Subtle grid */
+    .hero-grid {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0.025;
+      background-image:
+        linear-gradient(rgba(0,212,255,1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,1) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* ─── Waveform visualization ─────────────────────────── */
+    .waveform-wrap {
+      position: relative;
+      width: min(80vw, 1100px);
+      height: 220px;
+      min-height: 120px;
+      margin-bottom: 2.5rem;
+    }
+    .waveform-glow {
+      position: absolute; inset: -30px;
+      background: radial-gradient(ellipse, rgba(0,212,255,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .wave-bars {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+      gap: 3px; height: 100%;
+    }
+    .wave-bar {
+      width: 3px; border-radius: 9999px;
+      animation: waveAnim 1.8s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes waveAnim {
+      0%,100% { transform: scaleY(0.15); }
+      50%     { transform: scaleY(1); }
+    }
+
+    /* ─── CTA button ─────────────────────────────────────── */
+    .cta-btn {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1rem;
+      color: #050810;
+      background: var(--accent-cyan);
+      border: none;
+      padding: 0.9375rem 2.75rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      box-shadow:
+        0 0 0 1px rgba(0,212,255,0.4),
+        0 0 24px rgba(0,212,255,0.45),
+        0 0 60px rgba(0,212,255,0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+    }
+    .cta-btn:hover {
+      transform: scale(1.035);
+      box-shadow:
+        0 0 0 1px rgba(0,212,255,0.6),
+        0 0 36px rgba(0,212,255,0.65),
+        0 0 90px rgba(0,212,255,0.28);
+    }
+    .cta-btn:active { transform: scale(0.98); }
+    .cta-btn:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 3px;
+    }
+
+    /* ─── Scroll indicator ───────────────────────────────── */
+    .scroll-ind {
+      position: absolute; bottom: 2.25rem; left: 50%;
+      transform: translateX(-50%);
+      animation: scrollBounce 2.2s ease-in-out infinite;
+      opacity: 0.5;
+    }
+    @keyframes scrollBounce {
+      0%,100% { transform: translateX(-50%) translateY(0); }
+      50%     { transform: translateX(-50%) translateY(9px); }
+    }
+
+    /* ─── Glassmorphism cards ────────────────────────────── */
+    .glass-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(0,212,255,0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 1rem;
+      padding: 2.75rem;
+      transition: border-color 0.3s ease, background 0.3s ease;
+    }
+    .glass-card:hover {
+      background: rgba(0,212,255,0.03);
+      border-color: rgba(0,212,255,0.22);
+    }
+    .glass-card.violet-accent {
+      border-color: rgba(124,58,237,0.12);
+    }
+    .glass-card.violet-accent:hover {
+      background: rgba(124,58,237,0.03);
+      border-color: rgba(124,58,237,0.25);
+    }
+
+    .icon-wrap {
+      width: 68px; height: 68px;
+      border-radius: 0.875rem;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .icon-wrap.cyan-icon {
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.22);
+      box-shadow: 0 0 16px rgba(0,212,255,0.2);
+    }
+    .icon-wrap.violet-icon {
+      background: rgba(124,58,237,0.08);
+      border: 1px solid rgba(124,58,237,0.22);
+      box-shadow: 0 0 16px rgba(124,58,237,0.2);
+    }
+
+    /* ─── Model cards ────────────────────────────────────── */
+    .model-card {
+      background: var(--bg-surface, #111827);
+      border-radius: 1.25rem;
+      padding: 2.5rem;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .model-card.violet {
+      border: 1px solid rgba(124,58,237,0.2);
+    }
+    .model-card.violet:hover {
+      border-color: rgba(124,58,237,0.6);
+      box-shadow:
+        0 0 40px rgba(124,58,237,0.18),
+        0 0 80px rgba(124,58,237,0.08),
+        inset 0 0 30px rgba(124,58,237,0.04);
+    }
+    .model-card.cyan {
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+    .model-card.cyan:hover {
+      border-color: rgba(0,212,255,0.6);
+      box-shadow:
+        0 0 40px rgba(0,212,255,0.18),
+        0 0 80px rgba(0,212,255,0.08),
+        inset 0 0 30px rgba(0,212,255,0.04);
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6875rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      border-radius: 9999px;
+      padding: 0.28rem 0.9rem;
+      margin-bottom: 1.125rem;
+    }
+    .badge.violet {
+      color: var(--accent-violet);
+      background: rgba(124,58,237,0.1);
+      border: 1px solid rgba(124,58,237,0.3);
+    }
+    .badge.cyan {
+      color: var(--accent-cyan);
+      background: rgba(0,212,255,0.1);
+      border: 1px solid rgba(0,212,255,0.3);
+    }
+
+    .model-input-row {
+      display: flex; align-items: center; gap: 0.625rem;
+      padding: 0.875rem 1rem;
+      border-radius: 0.5rem;
+    }
+    .model-input-row.violet-row {
+      background: rgba(124,58,237,0.05);
+      border: 1px solid rgba(124,58,237,0.15);
+    }
+    .model-input-row.cyan-row {
+      background: rgba(0,212,255,0.05);
+      border: 1px solid rgba(0,212,255,0.15);
+    }
+
+    /* ─── Section backgrounds ────────────────────────────── */
+    .section-dark   { background: var(--bg-primary); }
+    .section-mid    { background: var(--bg-secondary); }
+
+    /* ─── Fade-in animations ─────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { opacity: 0; animation: fadeUp 0.8s ease forwards; }
+    .d1 { animation-delay: 0.1s; }
+    .d2 { animation-delay: 0.22s; }
+    .d3 { animation-delay: 0.34s; }
+    .d4 { animation-delay: 0.46s; }
+    .d5 { animation-delay: 0.58s; }
+    .d6 { animation-delay: 0.70s; }
+
+    /* ─── Landing page isolation ────────────────────────── */
+    /* Explicit full-width: no sidebar, no margin offset, ever */
+    #page-landing {
+      display: block;
+      width: 100%;
+      margin-left: 0 !important;
+      padding-left: 0 !important;
+    }
+
+    /* ─── Dashboard layout (sidebar lives INSIDE #page-dashboard) ── */
+    #page-dashboard {
+      display: block;
+      width: 100%;
+    }
+    .db-layout {
+      display: flex;
+      min-height: 100vh;
+      padding-top: 64px;
+      width: 100%;
+    }
+    /* Sidebar — scoped to dashboard only */
+    .db-sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: var(--bg-secondary);
+      border-right: 1px solid rgba(0,212,255,0.08);
+      padding: 1.75rem 1.25rem;
+      position: sticky;
+      top: 64px;
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+    .db-sidebar-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.625rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      padding: 0.75rem 0.875rem 0.375rem;
+    }
+    .db-sidebar-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.875rem; font-weight: 500;
+      color: var(--text-muted);
+      padding: 0.625rem 0.875rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: color 0.2s ease, background 0.2s ease;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .db-sidebar-item:hover {
+      color: var(--text-primary);
+      background: rgba(0,212,255,0.05);
+    }
+    .db-sidebar-item.active {
+      color: var(--text-primary);
+      background: rgba(0,212,255,0.1);
+      border-left: 3px solid var(--accent-cyan);
+      padding-left: calc(0.875rem - 3px);
+    }
+    .db-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ─── Dashboard topbar ─────────────────────────── */
+    .db-topbar {
+      padding: 1.375rem 2rem;
+      border-bottom: 1px solid rgba(0,212,255,0.08);
+      background: rgba(17,24,39,0.55);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+      backdrop-filter: blur(8px);
+    }
+    .db-topbar-title {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.375rem;
+      color: var(--text-primary); margin-bottom: 0.125rem;
+    }
+    .db-topbar-sub {
+      font-family: 'DM Mono', monospace; font-size: 0.625rem;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.16em;
+    }
+    .db-topbar-live {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-family: 'DM Mono', monospace; font-size: 0.625rem;
+      color: var(--success, #10B981); text-transform: uppercase; letter-spacing: 0.14em;
+    }
+    .db-live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success, #10B981);
+      box-shadow: 0 0 6px rgba(16,185,129,0.8);
+      animation: livePulse 2s ease-in-out infinite;
+    }
+    @keyframes livePulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.35; }
+    }
+
+    /* ─── Dashboard content body ───────────────────── */
+    .db-content {
+      flex: 1; padding: 1.75rem 2rem;
+      overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem;
+    }
+
+    /* ─── Stat cards ────────────────────────────────── */
+    .db-stat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+    }
+    .db-stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid rgba(0,212,255,0.08);
+      border-radius: 0.875rem; padding: 1.25rem 1.375rem;
+      position: relative; overflow: hidden;
+      transition: border-color 0.25s ease, transform 0.2s ease;
+      cursor: default;
+    }
+    .db-stat-card:hover { border-color: rgba(0,212,255,0.22); transform: translateY(-1px); }
+    .db-stat-card::after {
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 80px; height: 80px;
+      background: radial-gradient(circle at top right, rgba(0,212,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .db-stat-card.violet-card::after {
+      background: radial-gradient(circle at top right, rgba(124,58,237,0.1) 0%, transparent 70%);
+    }
+    .db-stat-label {
+      font-family: 'DM Mono', monospace; font-size: 0.5875rem;
+      color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.16em; margin-bottom: 0.75rem;
+    }
+    .db-stat-value {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 2rem;
+      color: var(--text-primary); line-height: 1; margin-bottom: 0.3rem;
+    }
+    .db-stat-sub {
+      font-family: 'DM Mono', monospace; font-size: 0.625rem;
+      color: var(--accent-cyan); letter-spacing: 0.08em;
+    }
+    .db-stat-sub.violet { color: var(--accent-violet); }
+    .db-stat-icon {
+      position: absolute; top: 1.125rem; right: 1.125rem;
+      width: 32px; height: 32px; border-radius: 0.5rem;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.15);
+    }
+    .db-stat-icon.violet-icon {
+      background: rgba(124,58,237,0.06); border-color: rgba(124,58,237,0.15);
+    }
+
+    /* ─── Stat sparkline ─────────────────────────────── */
+    .db-sparkline { position: absolute; bottom: 1rem; right: 1rem; opacity: 0.35; }
+
+    /* ─── Upload zone ────────────────────────────────── */
+    .db-upload-zone {
+      background: rgba(0,212,255,0.02);
+      border: 2px dashed rgba(0,212,255,0.18);
+      border-radius: 1rem; padding: 3rem 2rem;
+      min-height: 200px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; cursor: pointer;
+      transition: border-color 0.25s ease, background 0.25s ease;
+      position: relative;
+    }
+    .db-upload-zone:hover, .db-upload-zone.drag-over {
+      border-color: rgba(0,212,255,0.45);
+      background: rgba(0,212,255,0.04);
+    }
+    .db-upload-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .db-upload-icon {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.125rem;
+      box-shadow: 0 0 20px rgba(0,212,255,0.1);
+    }
+    .db-upload-title {
+      font-family: 'Syne', sans-serif; font-weight: 600; font-size: 1rem;
+      color: var(--text-primary); margin-bottom: 0.375rem;
+    }
+    .db-upload-sub {
+      font-family: 'Outfit', sans-serif; font-size: 0.8125rem; color: var(--text-muted);
+    }
+    .db-upload-types {
+      display: flex; gap: 0.5rem; justify-content: center; margin-top: 1.25rem;
+    }
+    .db-type-pill {
+      font-family: 'DM Mono', monospace; font-size: 0.5875rem;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      padding: 0.25rem 0.75rem; border-radius: 9999px;
+    }
+    .db-type-pill.wav {
+      color: var(--accent-cyan); background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);
+    }
+    .db-type-pill.png {
+      color: var(--accent-violet); background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2);
+    }
+
+    /* ─── Results area ───────────────────────────────── */
+    .db-results {
+      background: var(--bg-secondary); border: 1px solid rgba(0,212,255,0.1);
+      border-radius: 1rem; padding: 1.5rem; display: none;
+    }
+    .db-results.visible { display: block; }
+    .db-results-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .db-prediction-main {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.75rem;
+      color: var(--text-primary); margin-bottom: 0.25rem; line-height: 1.1;
+    }
+    .db-confidence-badge {
+      font-family: 'DM Mono', monospace; font-size: 0.6875rem;
+      color: var(--success, #10B981); letter-spacing: 0.08em;
+    }
+    .db-pred-list { display: flex; flex-direction: column; gap: 0.625rem; }
+    .db-pred-row {
+      display: flex; align-items: center; gap: 0.875rem;
+      opacity: 0; transform: translateY(8px);
+      animation: predRowIn 0.4s ease forwards;
+    }
+    @keyframes predRowIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .db-pred-rank {
+      font-family: 'DM Mono', monospace; font-size: 0.5875rem;
+      color: var(--text-muted); min-width: 1rem;
+    }
+    .db-pred-label {
+      font-family: 'Outfit', sans-serif; font-size: 0.8125rem;
+      color: var(--text-primary); flex: 1; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .db-pred-bar-wrap {
+      width: 100px; height: 4px; border-radius: 9999px;
+      background: rgba(255,255,255,0.06); overflow: hidden;
+    }
+    .db-pred-bar-fill {
+      height: 100%; border-radius: 9999px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet));
+      transition: width 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .db-pred-pct {
+      font-family: 'DM Mono', monospace; font-size: 0.6875rem;
+      color: var(--accent-cyan); min-width: 2.5rem; text-align: right;
+    }
+    .db-results-reset {
+      font-family: 'DM Mono', monospace; font-size: 0.5875rem;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.12em;
+      background: none; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.375rem; padding: 0.375rem 0.75rem; cursor: pointer;
+      transition: border-color 0.2s ease, color 0.2s ease;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .db-results-reset:hover { border-color: rgba(239,68,68,0.4); color: #EF4444; }
+
+    /* ─── Loading state ─────────────────────────────── */
+    .db-loading {
+      display: none; align-items: center; justify-content: center;
+      gap: 0.375rem; padding: 1.5rem; text-align: center;
+    }
+    .db-loading.visible { display: flex; }
+    .db-loading-bar {
+      width: 4px; border-radius: 9999px; background: var(--accent-cyan);
+      animation: loadBar 1.2s ease-in-out infinite;
+    }
+    .db-loading-bar:nth-child(1) { height: 24px; animation-delay: 0s; }
+    .db-loading-bar:nth-child(2) { height: 36px; animation-delay: 0.15s; }
+    .db-loading-bar:nth-child(3) { height: 28px; animation-delay: 0.3s; }
+    .db-loading-bar:nth-child(4) { height: 20px; animation-delay: 0.45s; }
+    @keyframes loadBar {
+      0%,100% { transform: scaleY(0.3); opacity: 0.4; }
+      50%      { transform: scaleY(1); opacity: 1; }
+    }
+
+    /* ─── Right panel ────────────────────────────────── */
+    .db-right {
+      width: 260px; flex-shrink: 0;
+      background: var(--bg-secondary); border-left: 1px solid rgba(0,212,255,0.08);
+      padding: 1.5rem 1.125rem;
+      position: sticky; top: 64px; height: calc(100vh - 64px);
+      overflow-y: auto; display: flex; flex-direction: column; gap: 0;
+    }
+    .db-right-section { margin-bottom: 1.875rem; }
+    .db-right-label {
+      font-family: 'DM Mono', monospace; font-size: 0.5875rem;
+      color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.18em; margin-bottom: 0.875rem;
+    }
+    .db-right-model {
+      background: var(--bg-elevated); border-radius: 0.75rem;
+      padding: 0.875rem 1rem; margin-bottom: 0.625rem;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .db-right-model-name {
+      font-family: 'Syne', sans-serif; font-size: 0.8125rem; font-weight: 600;
+      color: var(--text-primary); margin-bottom: 0.125rem;
+    }
+    .db-right-model-acc {
+      font-family: 'DM Mono', monospace; font-size: 0.625rem;
+      margin-bottom: 0.625rem; letter-spacing: 0.06em;
+    }
+    .db-right-progress {
+      height: 4px; border-radius: 9999px; background: rgba(255,255,255,0.05); overflow: hidden;
+    }
+    .db-right-progress-fill {
+      height: 100%; border-radius: 9999px;
+      transition: width 1.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .db-recent-row {
+      display: flex; align-items: center; gap: 0.625rem;
+      padding: 0.625rem 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .db-recent-row:last-child { border-bottom: none; }
+    .db-recent-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .db-recent-info { flex: 1; min-width: 0; }
+    .db-recent-name {
+      font-family: 'Outfit', sans-serif; font-size: 0.75rem;
+      color: var(--text-primary); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .db-recent-meta {
+      font-family: 'DM Mono', monospace; font-size: 0.5625rem;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .db-recent-pct {
+      font-family: 'DM Mono', monospace; font-size: 0.625rem;
+      color: var(--text-muted);
+    }
+    .db-empty-recent {
+      font-family: 'DM Mono', monospace; font-size: 0.6rem;
+      color: var(--text-muted); text-align: center; padding: 1.25rem 0;
+      opacity: 0.6; letter-spacing: 0.08em;
+    }
+
+    /* ─── Shared placeholder styles (History / About) ────── */
+    .page-placeholder {
+      min-height: 100vh; padding-top: 64px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: var(--bg-primary);
+      position: relative; overflow: hidden;
+      width: 100%;
+    }
+    .page-placeholder::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(0,212,255,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .back-btn {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.875rem; font-weight: 500;
+      color: var(--accent-cyan);
+      background: rgba(0,212,255,0.06);
+      border: 1px solid rgba(0,212,255,0.25);
+      padding: 0.75rem 1.75rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .back-btn:hover {
+      background: rgba(0,212,255,0.1);
+      border-color: rgba(0,212,255,0.45);
+    }
+
+    /* ─── History page ───────────────────────────────────── */
+    .hist-filter-pill {
+      font-family: 'DM Mono', monospace; font-size: 0.625rem;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      padding: 0.35rem 0.875rem; border-radius: 9999px;
+      cursor: pointer; border: 1px solid rgba(0,212,255,0.15);
+      background: var(--bg-elevated); color: var(--text-muted);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .hist-filter-pill.active {
+      background: rgba(0,212,255,0.1); color: var(--accent-cyan);
+      border-color: rgba(0,212,255,0.3);
+    }
+    .hist-table { width: 100%; border-collapse: collapse; }
+    .hist-th {
+      font-family: 'DM Mono', monospace; font-size: 0.5875rem;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.14em;
+      padding: 0.75rem 1rem; text-align: left;
+      border-bottom: 1px solid rgba(0,212,255,0.08);
+      position: sticky; top: 0; background: var(--bg-primary); z-index: 2;
+    }
+    .hist-tr {
+      transition: background 0.15s;
+    }
+    .hist-tr:nth-child(odd)  { background: var(--bg-secondary); }
+    .hist-tr:nth-child(even) { background: var(--bg-elevated); }
+    .hist-tr:hover { background: rgba(0,212,255,0.04); }
+    .hist-td {
+      font-family: 'Outfit', sans-serif; font-size: 0.8125rem;
+      color: var(--text-primary); padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .hist-td.mono {
+      font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--text-muted);
+    }
+    .hist-type-pill {
+      font-family: 'DM Mono', monospace; font-size: 0.5875rem;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      padding: 0.2rem 0.625rem; border-radius: 9999px; border: 1px solid;
+    }
+    .hist-type-wav { color: var(--accent-cyan); background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.25); }
+    .hist-type-png { color: var(--accent-violet); background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.25); }
+    .hist-conf-green { color: #10B981; font-family: 'DM Mono', monospace; font-size: 0.75rem; }
+    .hist-conf-amber { color: #F59E0B; font-family: 'DM Mono', monospace; font-size: 0.75rem; }
+    .hist-conf-red   { color: #EF4444; font-family: 'DM Mono', monospace; font-size: 0.75rem; }
+    .hist-del-btn {
+      background: none; border: none; cursor: pointer; color: var(--text-muted);
+      padding: 0.25rem; border-radius: 0.25rem;
+      transition: color 0.2s;
+    }
+    .hist-del-btn:hover { color: #EF4444; }
+    .hist-empty {
+      text-align: center; padding: 4rem 2rem;
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+    }
+
+    /* ─── About page ─────────────────────────────────────── */
+    .about-section { margin-bottom: 3.5rem; }
+    .about-h2 {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.75rem;
+      color: var(--text-primary); margin-bottom: 0.375rem;
+    }
+    .about-sub {
+      font-family: 'Outfit', sans-serif; font-size: 0.9375rem;
+      color: var(--text-muted); margin-bottom: 1.75rem;
+    }
+    .about-model-card {
+      background: var(--bg-secondary); border-radius: 1rem;
+      padding: 1.75rem; border: 1px solid;
+      position: relative; overflow: hidden;
+    }
+    .about-model-card.violet { border-color: rgba(124,58,237,0.2); border-top: 3px solid #7C3AED; }
+    .about-model-card.cyan   { border-color: rgba(0,212,255,0.2);  border-top: 3px solid #00D4FF; }
+    .about-stat-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+      margin: 1.25rem 0;
+    }
+    .about-stat-cell {
+      background: var(--bg-elevated); border-radius: 0.5rem; padding: 0.75rem;
+    }
+    .about-stat-cell-label {
+      font-family: 'DM Mono', monospace; font-size: 0.5875rem;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.12em;
+      margin-bottom: 0.25rem;
+    }
+    .about-stat-cell-val {
+      font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.9375rem;
+      color: var(--text-primary);
+    }
+    .about-train-line {
+      font-family: 'DM Mono', monospace; font-size: 0.6875rem;
+      color: var(--text-muted); padding: 0.375rem 0;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .about-class-group { margin-bottom: 1.5rem; }
+    .about-class-group-label {
+      font-family: 'DM Mono', monospace; font-size: 0.625rem;
+      text-transform: uppercase; letter-spacing: 0.18em;
+      margin-bottom: 0.625rem;
+    }
+    .about-class-badges {
+      display: flex; flex-wrap: wrap; gap: 0.375rem;
+    }
+    .about-class-badge {
+      font-family: 'DM Mono', monospace; font-size: 0.6rem;
+      padding: 0.25rem 0.625rem; border-radius: 0.375rem; border: 1px solid;
+      text-transform: lowercase; letter-spacing: 0.06em;
+    }
+    .about-platform-card {
+      background: var(--bg-secondary); border: 1px solid rgba(0,212,255,0.1);
+      border-radius: 1rem; padding: 1.5rem;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .about-platform-card:hover {
+      border-color: rgba(0,212,255,0.3);
+      box-shadow: 0 0 24px rgba(0,212,255,0.06);
+    }
+    .about-icon-wrap {
+      width: 44px; height: 44px; border-radius: 0.625rem;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    /* ─── Enhancement 3: Navbar scroll glassmorphism ─────── */
+    .navbar { transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+    .navbar.scrolled {
+      background: rgba(10,14,26,0.95);
+      border-bottom-color: rgba(0,212,255,0.2);
+      box-shadow: 0 4px 24px rgba(0,212,255,0.05);
+    }
+
+    /* ─── Enhancement 4: Logo pulse ─────────────────────── */
+    @keyframes logoPulse {
+      0%,100% { filter: drop-shadow(0 0 6px #00D4FF) drop-shadow(0 0 12px #00D4FF); opacity: 1; }
+      50%     { filter: drop-shadow(0 0 2px #00D4FF); opacity: 0.65; }
+    }
+    .logo-icon { animation: logoPulse 2s ease-in-out infinite; }
+
+    /* ─── Enhancement 5: Ripple effect ──────────────────── */
+    .cta-btn { overflow: hidden; }
+    .ripple-wave {
+      position: absolute; border-radius: 50%;
+      background: rgba(0,212,255,0.35);
+      transform: scale(0); animation: rippleOut 0.6s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes rippleOut {
+      to { transform: scale(40); opacity: 0; }
+    }
+
+    /* ─── Enhancement 7: Section scroll reveal ───────────── */
+    .section-reveal {
+      opacity: 0; transform: translateY(40px);
+      transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+    }
+    .section-reveal.revealed { opacity: 1; transform: translateY(0); }
+    .section-reveal.d1 { transition-delay: 0.1s; }
+    .section-reveal.d2 { transition-delay: 0.2s; }
+    .section-reveal.d3 { transition-delay: 0.3s; }
+
+    /* ─── Enhancement 2: Exceeding Human Performance ────── */
+    .perf-section {
+      padding: 8rem 2.5rem; background: var(--bg-primary); position: relative; overflow: hidden;
+    }
+    .perf-section::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0,212,255,0.05) 0%, transparent 70%);
+    }
+    .perf-counter-val {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(2.25rem,5vw,3.5rem);
+      line-height: 1; letter-spacing: -0.02em;
+    }
+    .perf-counter-label {
+      font-family: 'DM Mono', monospace; font-size: 0.6875rem;
+      text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+    .perf-bar-track {
+      height: 10px; border-radius: 9999px; background: rgba(255,255,255,0.05);
+      overflow: hidden; margin-top: 0.625rem;
+    }
+    .perf-bar-fill {
+      height: 100%; border-radius: 9999px; width: 0%;
+      transition: width 1.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* ─── Enhancement 6: Footer 3-column ────────────────── */
+    .footer-pro {
+      background: var(--bg-primary);
+      border-top: none; padding: 3.5rem 2.5rem 2rem;
+      position: relative; overflow: hidden;
+    }
+    .footer-gradient-line {
+      height: 1px; width: 100%;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), var(--accent-violet), transparent);
+      margin-bottom: 3rem; opacity: 0.4;
+    }
+    .footer-grid {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 2rem; align-items: start;
+    }
+    .footer-copy {
+      max-width: 1200px; margin: 2.5rem auto 0;
+      text-align: center; font-family: 'DM Mono', monospace;
+      font-size: 0.6875rem; color: var(--text-muted); letter-spacing: 0.08em;
+      padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* ─── Responsive ─────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .nav-links { gap: 1.25rem; }
+      .logo-text { font-size: 1rem; }
+      .db-sidebar { width: 200px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Grain overlay -->
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ══════════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════════ -->
+<nav class="navbar" role="navigation">
+  <div class="navbar-inner">
+    <!-- Logo -->
+    <button class="logo" onclick="navigateTo('page-landing')" aria-label="NeuroSound home">
+      <svg class="logo-icon" width="30" height="26" viewBox="0 0 30 26" fill="none" aria-hidden="true">
+        <rect x="0"  y="9"  width="3" height="8"  rx="1.5" fill="#00D4FF" opacity="0.6"/>
+        <rect x="4"  y="5"  width="3" height="16" rx="1.5" fill="#00D4FF" opacity="0.75"/>
+        <rect x="8"  y="2"  width="3" height="22" rx="1.5" fill="#00D4FF"/>
+        <rect x="12" y="7"  width="3" height="12" rx="1.5" fill="#00D4FF" opacity="0.85"/>
+        <rect x="16" y="10" width="3" height="6"  rx="1.5" fill="#7C3AED" opacity="0.7"/>
+        <rect x="20" y="6"  width="3" height="14" rx="1.5" fill="#7C3AED" opacity="0.85"/>
+        <rect x="24" y="3"  width="3" height="20" rx="1.5" fill="#7C3AED"/>
+        <rect x="28" y="8"  width="2" height="10" rx="1"   fill="#7C3AED" opacity="0.55"/>
+      </svg>
+      <span class="logo-text">NeuroSound</span>
+    </button>
+
+    <!-- Links -->
+    <div class="nav-links">
+      <span class="nav-link active" data-page="page-landing"   onclick="navigateTo('page-landing')">Landing</span>
+      <span class="nav-link"        data-page="page-dashboard" onclick="navigateTo('page-dashboard')">Dashboard</span>
+      <span class="nav-link"        data-page="page-history"   onclick="navigateTo('page-history')">History</span>
+      <span class="nav-link"        data-page="page-about"     onclick="navigateTo('page-about')">About</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     PAGE: LANDING
+══════════════════════════════════════════ -->
+<div id="page-landing" class="page">
+
+  <!-- ───────────────────────────────────────
+       SECTION 1 — Hero
+  ─────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-grid" aria-hidden="true"></div>
+
+    <!-- Particle canvas -->
+    <canvas id="particleCanvas" aria-hidden="true"
+      style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;"></canvas>
+
+    <!-- ── Eyebrow ── -->
+    <div class="fade-up d1"
+      style="position:relative;z-index:2;
+             font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--accent-cyan);
+             text-transform:uppercase;letter-spacing:0.28em;
+             text-align:center;width:100%;padding:0 1.5rem;
+             margin-bottom:1.75rem;">
+      AI-Powered Acoustic Intelligence
+    </div>
+
+    <!-- ── Headline ── -->
+    <h1 class="fade-up d2"
+      style="position:relative;z-index:2;
+             font-family:'Syne',sans-serif;font-weight:800;
+             font-size:clamp(2.75rem,7.5vw,5rem);
+             line-height:1.04;letter-spacing:-0.025em;
+             color:var(--text-primary);
+             text-align:center;width:100%;max-width:820px;padding:0 1.5rem;
+             margin-bottom:2rem;
+             text-shadow:0 0 80px rgba(0,212,255,0.15);">
+      Decode the Sound<br><span
+        style="background:linear-gradient(110deg,var(--accent-cyan) 20%,var(--accent-violet) 80%);
+               -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+               display:inline-block;">Around You</span>
+    </h1>
+
+    <!-- ── Waveform — direct child of hero flex, not inside the 820px cap ── -->
+    <div class="waveform-wrap fade-up d3"
+      style="position:relative;z-index:2;margin-bottom:4rem;">
+      <div class="waveform-glow" aria-hidden="true"></div>
+      <div class="wave-bars" id="waveBars" aria-hidden="true"></div>
+    </div>
+
+    <!-- ── Body copy ── -->
+    <p class="fade-up d4"
+      style="position:relative;z-index:2;
+             font-family:'Outfit',sans-serif;font-size:1.1rem;color:#9CA3AF;
+             max-width:560px;width:100%;padding:0 1.5rem;
+             text-align:center;line-height:1.72;
+             margin-bottom:2.75rem;">
+      Upload any audio file or spectrogram and let our deep learning
+      models identify what's making that sound — in milliseconds.
+    </p>
+
+    <!-- ── CTA ── -->
+    <div class="fade-up d5" style="position:relative;z-index:2;">
+      <button class="cta-btn" onclick="navigateTo('page-dashboard')">
+        Start Analyzing
+      </button>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="scroll-ind" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="rgba(0,212,255,0.6)" stroke-width="2" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <polyline points="19 12 12 19 5 12"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────────────────
+       SECTION 2 — How It Works
+  ─────────────────────────────────────────── -->
+  <section class="section-mid section-reveal" style="padding:8rem 2.5rem;">
+    <div style="max-width:1200px;margin:0 auto;">
+
+      <!-- Heading -->
+      <div style="text-align:center;margin-bottom:4.5rem;">
+        <h2 style="font-family:'Syne',sans-serif;font-weight:700;
+                   font-size:clamp(1.875rem,4.5vw,3rem);
+                   color:var(--text-primary);margin-bottom:0.875rem;">
+          How It Works
+        </h2>
+        <p style="font-family:'DM Mono',monospace;font-size:0.8125rem;
+                  color:var(--accent-cyan);letter-spacing:0.1em;">
+          Two models. One interface. Zero complexity.
+        </p>
+      </div>
+
+      <!-- 3 Cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:2rem;">
+
+        <!-- Upload -->
+        <div class="glass-card" style="text-align:center;">
+          <div class="icon-wrap cyan-icon" style="margin-left:auto;margin-right:auto;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                 stroke="#00D4FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent-cyan);
+                      text-transform:uppercase;letter-spacing:0.18em;margin-bottom:0.75rem;">
+            Step 01
+          </div>
+          <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.3125rem;
+                     color:var(--text-primary);margin-bottom:0.75rem;">
+            Drop Your File
+          </h3>
+          <p style="font-family:'Outfit',sans-serif;font-size:0.9375rem;
+                    color:var(--text-muted);line-height:1.65;">
+            WAV audio or PNG spectrogram — drag, drop, done.
+          </p>
+        </div>
+
+        <!-- Analyze -->
+        <div class="glass-card violet-accent" style="text-align:center;">
+          <div class="icon-wrap violet-icon" style="margin-left:auto;margin-right:auto;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                 stroke="#7C3AED" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent-violet);
+                      text-transform:uppercase;letter-spacing:0.18em;margin-bottom:0.75rem;">
+            Step 02
+          </div>
+          <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.3125rem;
+                     color:var(--text-primary);margin-bottom:0.75rem;">
+            AI Classifies
+          </h3>
+          <p style="font-family:'Outfit',sans-serif;font-size:0.9375rem;
+                    color:var(--text-muted);line-height:1.65;">
+            EfficientNetB3 or YAMNet processes your file instantly.
+          </p>
+        </div>
+
+        <!-- Results -->
+        <div class="glass-card" style="text-align:center;">
+          <div class="icon-wrap cyan-icon" style="margin-left:auto;margin-right:auto;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                 stroke="#00D4FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6"  y1="20" x2="6"  y2="14"/>
+            </svg>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent-cyan);
+                      text-transform:uppercase;letter-spacing:0.18em;margin-bottom:0.75rem;">
+            Step 03
+          </div>
+          <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.3125rem;
+                     color:var(--text-primary);margin-bottom:0.75rem;">
+            Get Results
+          </h3>
+          <p style="font-family:'Outfit',sans-serif;font-size:0.9375rem;
+                    color:var(--text-muted);line-height:1.65;">
+            Top 5 predictions with confidence scores, ready in seconds.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────────────────
+       SECTION 2b — Exceeding Human Performance
+  ─────────────────────────────────────────── -->
+  <section class="perf-section section-reveal" id="perfSection">
+    <div style="max-width:1200px;margin:0 auto;">
+
+      <div style="text-align:center;margin-bottom:4rem;">
+        <h2 style="font-family:'Syne',sans-serif;font-weight:700;
+                   font-size:clamp(1.875rem,4.5vw,3rem);
+                   color:var(--text-primary);margin-bottom:0.875rem;">
+          Exceeding Human Performance
+        </h2>
+        <p style="font-family:'Outfit',sans-serif;font-size:1rem;color:var(--text-muted);">
+          State-of-the-art results on the ESC-50 benchmark
+        </p>
+      </div>
+
+      <!-- Animated counters -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem;margin-bottom:4rem;">
+        <div class="section-reveal d1" style="text-align:center;padding:2rem;background:var(--bg-secondary);border:1px solid rgba(124,58,237,0.15);border-radius:1rem;">
+          <div class="perf-counter-val" style="color:#7C3AED;" data-target="93.34" data-suffix="%">0%</div>
+          <div class="perf-counter-label">EfficientNetB3 Test Accuracy</div>
+        </div>
+        <div class="section-reveal d2" style="text-align:center;padding:2rem;background:var(--bg-secondary);border:1px solid rgba(0,212,255,0.15);border-radius:1rem;">
+          <div class="perf-counter-val" style="color:var(--accent-cyan);" data-target="88.5" data-suffix="%">0%</div>
+          <div class="perf-counter-label">YAMNet Val Accuracy</div>
+        </div>
+        <div class="section-reveal d3" style="text-align:center;padding:2rem;background:var(--bg-secondary);border:1px solid rgba(16,185,129,0.15);border-radius:1rem;">
+          <div class="perf-counter-val" style="color:#10B981;" data-target="12" data-prefix="+" data-suffix="pts">0pts</div>
+          <div class="perf-counter-label">Above Human Baseline</div>
+        </div>
+      </div>
+
+      <!-- Comparison bars -->
+      <div style="max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:1.25rem;">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+            <span style="font-family:'Outfit',sans-serif;font-size:0.875rem;color:var(--text-muted);">Human Baseline</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-muted);">81%</span>
+          </div>
+          <div class="perf-bar-track">
+            <div class="perf-bar-fill" data-width="81" style="background:rgba(156,163,175,0.4);"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+            <span style="font-family:'Outfit',sans-serif;font-size:0.875rem;color:var(--text-primary);font-weight:600;">NeuroSound (EfficientNetB3)</span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--accent-cyan);">93.34%</span>
+          </div>
+          <div class="perf-bar-track">
+            <div class="perf-bar-fill" data-width="93.34" style="background:linear-gradient(90deg,var(--accent-cyan),var(--accent-violet));"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ───────────────────────────────────────
+       SECTION 3 — Models
+  ─────────────────────────────────────────── -->
+  <section class="section-dark section-reveal" style="padding:8rem 2.5rem;">
+    <div style="max-width:1200px;margin:0 auto;">
+
+      <!-- Heading -->
+      <div style="text-align:center;margin-bottom:4.5rem;">
+        <h2 style="font-family:'Syne',sans-serif;font-weight:700;
+                   font-size:clamp(1.875rem,4.5vw,3rem);
+                   color:var(--text-primary);margin-bottom:0.875rem;">
+          Two Models. One Goal.
+        </h2>
+        <p style="font-family:'Outfit',sans-serif;font-size:1rem;color:var(--text-muted);">
+          Choose the model that fits your input — we handle the rest.
+        </p>
+      </div>
+
+      <!-- 2 Model cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.75rem;">
+
+        <!-- EfficientNetB3 -->
+        <div class="model-card violet" style="background:var(--bg-secondary);">
+          <div>
+            <span class="badge violet">Spectrogram</span>
+          </div>
+          <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.75rem;
+                     color:var(--text-primary);margin-bottom:0.5rem;">
+            EfficientNetB3
+          </h3>
+          <p style="font-family:'DM Mono',monospace;font-size:0.8rem;
+                    color:rgba(124,58,237,0.85);margin-bottom:1.25rem;">
+            Visual acoustic analysis
+          </p>
+          <p style="font-family:'Outfit',sans-serif;font-size:0.9375rem;
+                    color:var(--text-muted);line-height:1.68;margin-bottom:2rem;">
+            Trained on 20,000 Mel spectrogram images.
+            Recognizes 50 sound categories from PNG input.
+          </p>
+          <div class="model-input-row violet-row">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 21V9"/>
+            </svg>
+            <span style="font-family:'DM Mono',monospace;font-size:0.75rem;
+                         color:rgba(124,58,237,0.75);">
+              PNG spectrograms · 300×300px
+            </span>
+          </div>
+        </div>
+
+        <!-- YAMNet -->
+        <div class="model-card cyan" style="background:var(--bg-secondary);">
+          <div>
+            <span class="badge cyan">Audio</span>
+          </div>
+          <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.75rem;
+                     color:var(--text-primary);margin-bottom:0.5rem;">
+            YAMNet
+          </h3>
+          <p style="font-family:'DM Mono',monospace;font-size:0.8rem;
+                    color:rgba(0,212,255,0.85);margin-bottom:1.25rem;">
+            Direct audio classification
+          </p>
+          <p style="font-family:'Outfit',sans-serif;font-size:0.9375rem;
+                    color:var(--text-muted);line-height:1.68;margin-bottom:2rem;">
+            Pre-trained on AudioSet by Google.
+            Classifies raw WAV files with no preprocessing needed.
+          </p>
+          <div class="model-input-row cyan-row">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="#00D4FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18V5l12-2v13"/>
+              <circle cx="6" cy="18" r="3"/>
+              <circle cx="18" cy="16" r="3"/>
+            </svg>
+            <span style="font-family:'DM Mono',monospace;font-size:0.75rem;
+                         color:rgba(0,212,255,0.75);">
+              WAV files · 16kHz mono
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────────────────
+       SECTION 4 — CTA Final
+  ─────────────────────────────────────────── -->
+  <section class="section-mid" style="position:relative;padding:10rem 2.5rem;overflow:hidden;">
+    <!-- Radial glow center -->
+    <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;
+         background:radial-gradient(ellipse 75% 90% at 50% 50%, rgba(0,212,255,0.08) 0%, transparent 65%);"></div>
+    <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;
+         background:radial-gradient(ellipse 40% 45% at 50% 50%, rgba(0,212,255,0.05) 0%, transparent 60%);"></div>
+    <!-- Subtle ring decoration -->
+    <div aria-hidden="true" style="position:absolute;top:50%;left:50%;
+         width:520px;height:520px;border-radius:50%;
+         border:1px solid rgba(0,212,255,0.05);
+         transform:translate(-50%,-50%);pointer-events:none;"></div>
+    <div aria-hidden="true" style="position:absolute;top:50%;left:50%;
+         width:340px;height:340px;border-radius:50%;
+         border:1px solid rgba(0,212,255,0.07);
+         transform:translate(-50%,-50%);pointer-events:none;"></div>
+
+    <div style="position:relative;z-index:1;text-align:center;max-width:680px;margin:0 auto;">
+      <div style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--accent-cyan);
+                  text-transform:uppercase;letter-spacing:0.28em;margin-bottom:1.5rem;">
+        Get Started
+      </div>
+      <h2 style="font-family:'Syne',sans-serif;font-weight:800;
+                 font-size:clamp(2.25rem,6vw,3.5rem);
+                 line-height:1.08;letter-spacing:-0.02em;
+                 color:var(--text-primary);margin-bottom:1.25rem;">
+        Ready to Classify?
+      </h2>
+      <p style="font-family:'Outfit',sans-serif;font-size:1.125rem;
+                color:var(--text-muted);margin-bottom:3rem;">
+        Drop a sound. Get an answer.
+      </p>
+      <button class="cta-btn" onclick="navigateTo('page-dashboard')">
+        Start Analyzing
+      </button>
+    </div>
+  </section>
+
+  <!-- Footer — 3-column professional -->
+  <footer class="footer-pro">
+    <div class="footer-gradient-line"></div>
+    <div class="footer-grid">
+      <!-- Left: brand -->
+      <div>
+        <div style="display:flex;align-items:center;gap:0.625rem;margin-bottom:0.875rem;">
+          <svg class="logo-icon" width="28" height="24" viewBox="0 0 30 26" fill="none">
+            <rect x="0"  y="9"  width="3" height="8"  rx="1.5" fill="#00D4FF" opacity="0.6"/>
+            <rect x="4"  y="5"  width="3" height="16" rx="1.5" fill="#00D4FF" opacity="0.75"/>
+            <rect x="8"  y="2"  width="3" height="22" rx="1.5" fill="#00D4FF"/>
+            <rect x="12" y="7"  width="3" height="12" rx="1.5" fill="#00D4FF" opacity="0.85"/>
+            <rect x="16" y="10" width="3" height="6"  rx="1.5" fill="#7C3AED" opacity="0.7"/>
+            <rect x="20" y="6"  width="3" height="14" rx="1.5" fill="#7C3AED" opacity="0.85"/>
+            <rect x="24" y="3"  width="3" height="20" rx="1.5" fill="#7C3AED"/>
+            <rect x="28" y="8"  width="2" height="10" rx="1"   fill="#7C3AED" opacity="0.55"/>
+          </svg>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.0625rem;color:var(--text-primary);">NeuroSound</span>
+        </div>
+        <p style="font-family:'DM Mono',monospace;font-size:0.625rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.14em;line-height:1.7;">AI-Powered Acoustic Intelligence</p>
+      </div>
+
+      <!-- Center: nav links -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.625rem;">
+        <span style="font-family:'DM Mono',monospace;font-size:0.5625rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.18em;margin-bottom:0.25rem;">Navigate</span>
+        <button onclick="navigateTo('page-landing')"   style="font-family:'Outfit',sans-serif;font-size:0.8125rem;color:var(--text-muted);background:none;border:none;cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='#F9FAFB'" onmouseout="this.style.color='#6B7280'">Landing</button>
+        <button onclick="navigateTo('page-dashboard')" style="font-family:'Outfit',sans-serif;font-size:0.8125rem;color:var(--text-muted);background:none;border:none;cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='#F9FAFB'" onmouseout="this.style.color='#6B7280'">Dashboard</button>
+        <button onclick="navigateTo('page-history')"   style="font-family:'Outfit',sans-serif;font-size:0.8125rem;color:var(--text-muted);background:none;border:none;cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='#F9FAFB'" onmouseout="this.style.color='#6B7280'">History</button>
+        <button onclick="navigateTo('page-about')"     style="font-family:'Outfit',sans-serif;font-size:0.8125rem;color:var(--text-muted);background:none;border:none;cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='#F9FAFB'" onmouseout="this.style.color='#6B7280'">About</button>
+      </div>
+
+      <!-- Right: tech stack -->
+      <div style="text-align:right;">
+        <div style="font-family:'DM Mono',monospace;font-size:0.5625rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.18em;margin-bottom:0.875rem;">Built With</div>
+        <div style="font-family:'DM Mono',monospace;font-size:0.6875rem;color:var(--text-muted);line-height:2;">
+          EfficientNetB3 + Attention<br>
+          YAMNet (AudioSet)<br>
+          ESC-50 · 50 Sound Classes
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-copy">© 2026 NeuroSound · AI-Powered Acoustic Intelligence</div>
+  </footer>
+
+</div><!-- /page-landing -->
+
+<!-- ══════════════════════════════════════════
+     PAGE: DASHBOARD — sidebar layout
+     Sidebar lives INSIDE this div only.
+     Landing page is never affected.
+══════════════════════════════════════════ -->
+<div id="page-dashboard" class="page hidden">
+  <div class="db-layout">
+
+    <!-- ── Sidebar (scoped to dashboard) ── -->
+    <aside class="db-sidebar">
+      <div class="db-sidebar-label">Analyze</div>
+      <button class="db-sidebar-item active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+        Classifier
+      </button>
+      <button class="db-sidebar-item" onclick="navigateTo('page-history')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/>
+        </svg>
+        History
+      </button>
+
+      <div class="db-sidebar-label" style="margin-top:0.5rem;">Info</div>
+      <button class="db-sidebar-item" onclick="navigateTo('page-about')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        About
+      </button>
+      <button class="db-sidebar-item" onclick="navigateTo('page-landing')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Landing
+      </button>
+    </aside>
+
+    <!-- ── Main content area ── -->
+    <main class="db-main">
+
+      <!-- Topbar -->
+      <div class="db-topbar">
+        <div>
+          <div class="db-topbar-title">Dashboard</div>
+          <div class="db-topbar-sub">Sound Classification Interface</div>
+        </div>
+        <div class="db-topbar-live">
+          <div class="db-live-dot"></div>
+          Models Ready
+        </div>
+      </div>
+
+      <!-- Scrollable content -->
+      <div class="db-content">
+
+        <!-- Stat cards -->
+        <div class="db-stat-grid">
+          <!-- Total Analyses -->
+          <div class="db-stat-card">
+            <svg class="db-sparkline" width="56" height="22" viewBox="0 0 56 22">
+              <polyline points="0,18 8,14 16,16 24,10 32,12 40,6 48,8 56,4"
+                fill="none" stroke="#00D4FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="0,18 8,14 16,16 24,10 32,12 40,6 48,8 56,4 56,22 0,22"
+                fill="url(#spk1)" stroke="none"/>
+              <defs><linearGradient id="spk1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#00D4FF" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/>
+              </linearGradient></defs>
+            </svg>
+            <div class="db-stat-label">Total Analyses</div>
+            <div class="db-stat-value" id="statTotal">0</div>
+            <div class="db-stat-sub">This session</div>
+          </div>
+          <!-- Best Accuracy -->
+          <div class="db-stat-card violet-card">
+            <svg class="db-sparkline" width="56" height="22" viewBox="0 0 56 22">
+              <polyline points="0,16 8,12 16,14 24,8 32,10 40,5 48,7 56,3"
+                fill="none" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="0,16 8,12 16,14 24,8 32,10 40,5 48,7 56,3 56,22 0,22"
+                fill="url(#spk2)" stroke="none"/>
+              <defs><linearGradient id="spk2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+              </linearGradient></defs>
+            </svg>
+            <div class="db-stat-label">Best Accuracy</div>
+            <div class="db-stat-value">93.34<span style="font-size:1rem;opacity:0.6;">%</span></div>
+            <div class="db-stat-sub violet">EfficientNetB3</div>
+          </div>
+          <!-- Sound Classes -->
+          <div class="db-stat-card">
+            <svg class="db-sparkline" width="56" height="22" viewBox="0 0 56 22">
+              <polyline points="0,20 8,20 8,10 16,10 16,20 24,20 24,6 32,6 32,20 40,20 40,13 48,13 48,20 56,20"
+                fill="url(#spk3)" stroke="#00D4FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs><linearGradient id="spk3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#00D4FF" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/>
+              </linearGradient></defs>
+            </svg>
+            <div class="db-stat-label">Sound Classes</div>
+            <div class="db-stat-value">50</div>
+            <div class="db-stat-sub">ESC-50 dataset</div>
+          </div>
+        </div>
+
+        <!-- Upload zone -->
+        <div class="db-upload-zone" id="dbUploadZone"
+             ondragover="dbDragOver(event)"
+             ondragleave="dbDragLeave(event)"
+             ondrop="dbDrop(event)">
+          <input type="file" id="dbFileInput" accept=".wav,.png"
+                 onchange="dbFileSelected(this.files[0])">
+          <div class="db-upload-icon" id="dbUploadIcon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                 stroke="#00D4FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div class="db-upload-title" id="dbUploadTitle">Drop your file here</div>
+          <div class="db-upload-sub" id="dbUploadSub">or click to browse</div>
+          <div class="db-upload-types">
+            <span class="db-type-pill wav">.wav → YAMNet</span>
+            <span class="db-type-pill png">.png → EfficientNetB3</span>
+          </div>
+        </div>
+
+        <!-- Loading state -->
+        <div class="db-loading" id="dbLoading">
+          <div class="db-loading-bar"></div>
+          <div class="db-loading-bar"></div>
+          <div class="db-loading-bar"></div>
+          <div class="db-loading-bar"></div>
+          <span style="font-family:'DM Mono',monospace;font-size:0.6875rem;
+                       color:var(--text-muted);margin-left:0.75rem;text-transform:uppercase;
+                       letter-spacing:0.12em;" id="dbLoadingText">Analyzing…</span>
+        </div>
+
+        <!-- Prediction results -->
+        <div class="db-results" id="dbResults">
+          <div class="db-results-header">
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.5875rem;
+                          color:var(--text-muted);text-transform:uppercase;
+                          letter-spacing:0.14em;margin-bottom:0.375rem;" id="dbModelLabel">
+                Model · —
+              </div>
+              <div class="db-prediction-main" id="dbPredMain">—</div>
+              <div class="db-confidence-badge" id="dbConfBadge"></div>
+            </div>
+            <button class="db-results-reset" onclick="dbReset()">✕ Clear</button>
+          </div>
+          <div class="db-pred-list" id="dbPredList"></div>
+        </div>
+
+      </div><!-- /db-content -->
+    </main>
+
+    <!-- ── Right panel ── -->
+    <aside class="db-right">
+
+      <!-- Model Status -->
+      <div class="db-right-section">
+        <div class="db-right-label">Model Status</div>
+
+        <!-- EfficientNetB3 -->
+        <div class="db-right-model">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.125rem;">
+            <div class="db-right-model-name">EfficientNetB3</div>
+            <span style="font-family:'DM Mono',monospace;font-size:0.5rem;color:#10B981;
+                         letter-spacing:0.1em;display:flex;align-items:center;gap:0.25rem;">
+              <span style="width:5px;height:5px;border-radius:50%;background:#10B981;
+                           box-shadow:0 0 4px rgba(16,185,129,0.9);display:inline-block;"></span>LOADED</span>
+          </div>
+          <div class="db-right-model-acc" style="color:rgba(124,58,237,0.85);">93.34% accuracy</div>
+          <div class="db-right-progress">
+            <div class="db-right-progress-fill" id="progEff"
+                 style="width:0%;background:linear-gradient(90deg,#7C3AED,#9D5CF5);"></div>
+          </div>
+        </div>
+
+        <!-- YAMNet -->
+        <div class="db-right-model">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.125rem;">
+            <div class="db-right-model-name">YAMNet</div>
+            <span style="font-family:'DM Mono',monospace;font-size:0.5rem;color:#10B981;
+                         letter-spacing:0.1em;display:flex;align-items:center;gap:0.25rem;">
+              <span style="width:5px;height:5px;border-radius:50%;background:#10B981;
+                           box-shadow:0 0 4px rgba(16,185,129,0.9);display:inline-block;"></span>LOADED</span>
+          </div>
+          <div class="db-right-model-acc" style="color:rgba(0,212,255,0.85);">88.5% accuracy</div>
+          <div class="db-right-progress">
+            <div class="db-right-progress-fill" id="progYam"
+                 style="width:0%;background:linear-gradient(90deg,#00D4FF,#00A8CC);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Analyses -->
+      <div class="db-right-section">
+        <div class="db-right-label">Recent Analyses</div>
+        <div id="dbRecentList">
+          <div class="db-empty-recent">No analyses yet</div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+</div><!-- /page-dashboard -->
+
+<!-- PAGE: HISTORY -->
+<div id="page-history" class="page hidden">
+  <div class="db-layout">
+
+    <!-- Sidebar -->
+    <aside class="db-sidebar">
+      <div class="db-sidebar-label">Analyze</div>
+      <button class="db-sidebar-item" onclick="navigateTo('page-dashboard')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Classifier
+      </button>
+      <button class="db-sidebar-item active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+        History
+      </button>
+      <div class="db-sidebar-label" style="margin-top:0.5rem;">Info</div>
+      <button class="db-sidebar-item" onclick="navigateTo('page-about')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        About
+      </button>
+      <button class="db-sidebar-item" onclick="navigateTo('page-landing')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Landing
+      </button>
+    </aside>
+
+    <!-- Main -->
+    <main class="db-main">
+      <div class="db-topbar">
+        <div>
+          <div class="db-topbar-title">Analysis History</div>
+          <div class="db-topbar-sub">All your past classifications</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <button class="hist-filter-pill active" data-filter="all"  onclick="histFilter('all')">All</button>
+          <button class="hist-filter-pill"         data-filter="wav"  onclick="histFilter('wav')">WAV</button>
+          <button class="hist-filter-pill"         data-filter="png"  onclick="histFilter('png')">PNG</button>
+        </div>
+      </div>
+
+      <div class="db-content" style="padding:0;overflow-y:auto;flex:1;">
+        <div id="histTableWrap" style="overflow-x:auto;">
+          <table class="hist-table" id="histTable">
+            <thead>
+              <tr>
+                <th class="hist-th">Date</th>
+                <th class="hist-th">File</th>
+                <th class="hist-th">Type</th>
+                <th class="hist-th">Model</th>
+                <th class="hist-th">Prediction</th>
+                <th class="hist-th">Confidence</th>
+                <th class="hist-th"></th>
+              </tr>
+            </thead>
+            <tbody id="histBody"></tbody>
+          </table>
+          <div class="hist-empty" id="histEmpty">
+            <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+              <circle cx="36" cy="36" r="35" stroke="rgba(0,212,255,0.15)" stroke-width="1"/>
+              <path d="M18 36h4l5-14 8 28 5-18 4 8 4-4h6" stroke="#00D4FF" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:1.125rem;color:var(--text-primary);">No analyses yet</div>
+            <div style="font-family:'Outfit',sans-serif;font-size:0.875rem;color:var(--text-muted);">Upload a file to get started</div>
+            <button onclick="navigateTo('page-dashboard')" class="back-btn" style="margin-top:0.5rem;">Start Analyzing →</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+</div><!-- /page-history -->
+
+<!-- PAGE: ABOUT -->
+<div id="page-about" class="page hidden">
+  <div class="db-layout">
+
+    <!-- Sidebar -->
+    <aside class="db-sidebar">
+      <div class="db-sidebar-label">Analyze</div>
+      <button class="db-sidebar-item" onclick="navigateTo('page-dashboard')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Classifier
+      </button>
+      <button class="db-sidebar-item" onclick="navigateTo('page-history')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+        History
+      </button>
+      <div class="db-sidebar-label" style="margin-top:0.5rem;">Info</div>
+      <button class="db-sidebar-item active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        About
+      </button>
+      <button class="db-sidebar-item" onclick="navigateTo('page-landing')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Landing
+      </button>
+    </aside>
+
+    <!-- Main -->
+    <main class="db-main">
+      <div class="db-topbar">
+        <div>
+          <div class="db-topbar-title">About NeuroSound</div>
+          <div class="db-topbar-sub">Models, classes, and platform info</div>
+        </div>
+      </div>
+
+      <div class="db-content">
+
+        <!-- Section 1: Models -->
+        <div class="about-section">
+          <div class="about-h2">Our Models</div>
+          <div class="about-sub">State-of-the-art deep learning for acoustic classification</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;">
+
+            <!-- EfficientNetB3 -->
+            <div class="about-model-card violet">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;">
+                <div>
+                  <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.125rem;color:var(--text-primary);margin-bottom:0.25rem;">EfficientNetB3 + Attention</div>
+                  <div style="font-family:'DM Mono',monospace;font-size:0.625rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.14em;">Spectrogram model</div>
+                </div>
+                <span class="badge violet" style="margin:0;">Spectrogram</span>
+              </div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:2.25rem;color:#7C3AED;line-height:1;">93.34%</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.625rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:1rem;">Test Accuracy</div>
+              <hr style="border:none;border-top:1px solid rgba(124,58,237,0.2);margin-bottom:1rem;">
+              <div class="about-stat-grid">
+                <div class="about-stat-cell"><div class="about-stat-cell-label">Training Images</div><div class="about-stat-cell-val">20,000</div></div>
+                <div class="about-stat-cell"><div class="about-stat-cell-label">Sound Classes</div><div class="about-stat-cell-val">50</div></div>
+                <div class="about-stat-cell"><div class="about-stat-cell-label">Input Size</div><div class="about-stat-cell-val">300×300px</div></div>
+                <div class="about-stat-cell"><div class="about-stat-cell-label">Architecture</div><div class="about-stat-cell-val" style="font-size:0.75rem;">EfficientNetB3 + MHA</div></div>
+              </div>
+              <div class="about-train-line">Phase 1 — Backbone frozen · lr=8e-4</div>
+              <div class="about-train-line">Phase 2 — Fine-tuning · BN frozen · 20 layers</div>
+            </div>
+
+            <!-- YAMNet -->
+            <div class="about-model-card cyan">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;">
+                <div>
+                  <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.125rem;color:var(--text-primary);margin-bottom:0.25rem;">YAMNet</div>
+                  <div style="font-family:'DM Mono',monospace;font-size:0.625rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.14em;">Audio model</div>
+                </div>
+                <span class="badge cyan" style="margin:0;">Audio</span>
+              </div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:2.25rem;color:var(--accent-cyan);line-height:1;">88.5%</div>
+              <div style="font-family:'DM Mono',monospace;font-size:0.625rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:1rem;">Val Accuracy</div>
+              <hr style="border:none;border-top:1px solid rgba(0,212,255,0.2);margin-bottom:1rem;">
+              <div class="about-stat-grid">
+                <div class="about-stat-cell"><div class="about-stat-cell-label">Training WAV</div><div class="about-stat-cell-val">2,000</div></div>
+                <div class="about-stat-cell"><div class="about-stat-cell-label">Sound Classes</div><div class="about-stat-cell-val">50</div></div>
+                <div class="about-stat-cell"><div class="about-stat-cell-label">Input Format</div><div class="about-stat-cell-val">16kHz mono</div></div>
+                <div class="about-stat-cell"><div class="about-stat-cell-label">Pretrained on</div><div class="about-stat-cell-val" style="font-size:0.75rem;">AudioSet 2M clips</div></div>
+              </div>
+              <div class="about-train-line">Residual Dense head · Label smoothing 0.1</div>
+              <div class="about-train-line">5× augmentation · Phase 1 + Phase 2</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Section 2: ESC-50 Classes -->
+        <div class="about-section">
+          <div class="about-h2">50 Sound Classes</div>
+          <div class="about-sub">Environmental Sound Classification dataset — 50 categories across 5 groups</div>
+
+          <div class="about-class-group">
+            <div class="about-class-group-label" style="color:var(--accent-cyan);">Animals (10)</div>
+            <div class="about-class-badges">
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">dog</span>
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">sheep</span>
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">hen</span>
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">cow</span>
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">insects</span>
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">frog</span>
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">pig</span>
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">rooster</span>
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">cat</span>
+              <span class="about-class-badge" style="color:var(--accent-cyan);background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);" data-group="animals">crow</span>
+            </div>
+          </div>
+
+          <div class="about-class-group">
+            <div class="about-class-group-label" style="color:#2DD4BF;">Nature (10)</div>
+            <div class="about-class-badges">
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">chirping_birds</span>
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">rain</span>
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">wind</span>
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">sea_waves</span>
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">crickets</span>
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">thunderstorm</span>
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">pouring_water</span>
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">toilet_flush</span>
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">crackling_fire</span>
+              <span class="about-class-badge" style="color:#2DD4BF;background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);">water_drops</span>
+            </div>
+          </div>
+
+          <div class="about-class-group">
+            <div class="about-class-group-label" style="color:#F59E0B;">Human (10)</div>
+            <div class="about-class-badges">
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">brushing_teeth</span>
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">laughing</span>
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">crying_baby</span>
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">clapping</span>
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">footsteps</span>
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">drinking_sipping</span>
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">snoring</span>
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">coughing</span>
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">sneezing</span>
+              <span class="about-class-badge" style="color:#F59E0B;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);">breathing</span>
+            </div>
+          </div>
+
+          <div class="about-class-group">
+            <div class="about-class-group-label" style="color:var(--accent-violet);">Interior (10)</div>
+            <div class="about-class-badges">
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">vacuum_cleaner</span>
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">mouse_click</span>
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">washing_machine</span>
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">clock_tick</span>
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">glass_breaking</span>
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">door_wood_creaks</span>
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">keyboard_typing</span>
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">clock_alarm</span>
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">can_opening</span>
+              <span class="about-class-badge" style="color:var(--accent-violet);background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.2);">door_wood_knock</span>
+            </div>
+          </div>
+
+          <div class="about-class-group">
+            <div class="about-class-group-label" style="color:#9CA3AF;">Urban (10)</div>
+            <div class="about-class-badges">
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">chainsaw</span>
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">airplane</span>
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">train</span>
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">engine</span>
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">siren</span>
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">hand_saw</span>
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">helicopter</span>
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">car_horn</span>
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">church_bells</span>
+              <span class="about-class-badge" style="color:#9CA3AF;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);">fireworks</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Platform -->
+        <div class="about-section">
+          <div class="about-h2">Platform</div>
+          <div class="about-sub">Built for engineers and researchers</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;">
+
+            <div class="about-platform-card">
+              <div class="about-icon-wrap" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);box-shadow:0 0 16px rgba(0,212,255,0.15);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;">Deep Learning</div>
+              <div style="font-family:'Outfit',sans-serif;font-size:0.875rem;color:var(--text-muted);line-height:1.65;">Two state-of-the-art models trained on ESC-50, achieving above human-level accuracy (81% baseline).</div>
+            </div>
+
+            <div class="about-platform-card">
+              <div class="about-icon-wrap" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);box-shadow:0 0 16px rgba(124,58,237,0.15);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              </div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;">Real-time Analysis</div>
+              <div style="font-family:'Outfit',sans-serif;font-size:0.875rem;color:var(--text-muted);line-height:1.65;">Upload any WAV or PNG spectrogram and get instant classification results in milliseconds.</div>
+            </div>
+
+            <div class="about-platform-card">
+              <div class="about-icon-wrap" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);box-shadow:0 0 16px rgba(0,212,255,0.15);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              </div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--text-primary);margin-bottom:0.5rem;">50 Sound Classes</div>
+              <div style="font-family:'Outfit',sans-serif;font-size:0.875rem;color:var(--text-muted);line-height:1.65;">From dog barks to thunderstorms — comprehensive environmental sound recognition.</div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /db-content -->
+    </main>
+
+  </div>
+</div><!-- /page-about -->
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+/* ── SPA Navigation ──────────────────────────────────── */
+function navigateTo(pageId) {
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.add('hidden');
+    p.style.opacity = '0';
+  });
+
+  const page = document.getElementById(pageId);
+  page.classList.remove('hidden');
+  page.style.opacity = '0';
+
+  requestAnimationFrame(() => {
+    page.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    page.style.opacity = '1';
+    page.style.transform = 'translateY(0)';
+  });
+
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const link = document.querySelector(`.nav-link[data-page="${pageId}"]`);
+  if (link) link.classList.add('active');
+
+  window.scrollTo({ top: 0 });
+
+  if (pageId === 'page-dashboard') dbInitProgressBars();
+  if (pageId === 'page-history')   histLoadFromAPI();
+}
+
+/* ── History table ───────────────────────────────────── */
+const histRows = [];
+let histCurrentFilter = 'all';
+
+function histAddRow(filename, model, prediction, confidence) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+    + ' · ' + now.toTimeString().slice(0,5);
+  histRows.unshift({ id: Date.now(), date: dateStr, file: filename, type: ext, model, prediction, confidence });
+  histRender();
+}
+
+function histRender() {
+  const body = document.getElementById('histBody');
+  const empty = document.getElementById('histEmpty');
+  const filtered = histCurrentFilter === 'all'
+    ? histRows
+    : histRows.filter(r => r.type === histCurrentFilter);
+
+  if (filtered.length === 0) {
+    body.innerHTML = '';
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+  body.innerHTML = filtered.map(r => {
+    const confColor = r.confidence > 80 ? 'hist-conf-green' : r.confidence > 50 ? 'hist-conf-amber' : 'hist-conf-red';
+    const typeClass = r.type === 'wav' ? 'hist-type-wav' : 'hist-type-png';
+    const nameTrunc = r.file.length > 20 ? r.file.slice(0,18)+'…' : r.file;
+    return `<tr class="hist-tr" id="hrow-${r.id}">
+      <td class="hist-td mono">${r.date}</td>
+      <td class="hist-td">${nameTrunc}</td>
+      <td class="hist-td"><span class="hist-type-pill ${typeClass}">${r.type.toUpperCase()}</span></td>
+      <td class="hist-td mono">${r.model}</td>
+      <td class="hist-td" style="font-weight:600;">${r.prediction}</td>
+      <td class="hist-td ${confColor}">${r.confidence.toFixed(1)}%</td>
+      <td class="hist-td">
+        <button class="hist-del-btn" onclick="histDelete(${r.id})" title="Delete">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function histDelete(id) {
+  try {
+    await fetch(`${API_BASE}/history/${id}`, { method: 'DELETE' });
+  } catch (_) { /* still remove locally even if offline */ }
+  const idx = histRows.findIndex(r => r.id === id);
+  if (idx !== -1) histRows.splice(idx, 1);
+  dbSessionCount = Math.max(0, dbSessionCount - 1);
+  const el = document.getElementById('statTotal');
+  if (el) el.textContent = dbSessionCount;
+  histRender();
+}
+
+async function histLoadFromAPI() {
+  try {
+    const res = await fetch(`${API_BASE}/history?limit=100`);
+    if (!res.ok) return;
+    const data = await res.json();
+    // data: { items: [{id, timestamp, filename, input_type, model_used, prediction, confidence, top5}], total }
+    histRows.length = 0;
+    data.items.forEach(item => {
+      const d = new Date(item.timestamp);
+      const dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+        + ' · ' + d.toTimeString().slice(0, 5);
+      histRows.push({
+        id:         item.id,
+        date:       dateStr,
+        file:       item.filename,
+        type:       item.input_type === 'wav' ? 'wav' : 'png',
+        model:      item.model_used === 'yamnet' ? 'YAMNet' : 'EfficientNetB3',
+        prediction: item.prediction,
+        confidence: item.confidence * 100,
+      });
+    });
+    dbSessionCount = data.total;
+    const el = document.getElementById('statTotal');
+    if (el) el.textContent = dbSessionCount;
+    histRender();
+  } catch (_) { /* backend offline — keep local state */ }
+}
+
+function histFilter(f) {
+  histCurrentFilter = f;
+  document.querySelectorAll('.hist-filter-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.filter === f);
+  });
+  histRender();
+}
+
+/* ── Waveform bars ───────────────────────────────────── */
+(function buildWaveform() {
+  const container = document.getElementById('waveBars');
+  if (!container) return;
+
+  const NUM_BARS = 110;
+
+  /* Bell-curve envelope so center bars are tallest */
+  function gauss(i, n) {
+    const x = (i / (n - 1)) * 2 - 1; // -1..1
+    return Math.exp(-3.5 * x * x);
+  }
+
+  for (let i = 0; i < NUM_BARS; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+
+    const env       = gauss(i, NUM_BARS);
+    const noise     = 0.65 + Math.random() * 0.35;
+    const baseH     = Math.max(12, Math.round(env * noise * 100));
+    const delay     = ((i * 0.055) % 1.8).toFixed(3);
+    const duration  = (1.4 + Math.random() * 0.8).toFixed(2);
+
+    /* Colour: cyan on the left two-thirds, violet on the right third */
+    const t = i / NUM_BARS;
+    let colour, glow;
+    if (t < 0.5) {
+      colour = '#00D4FF';
+      glow   = 'rgba(0,212,255,0.7)';
+    } else if (t < 0.78) {
+      /* blend zone — purple-ish */
+      colour = '#6B5CE7';
+      glow   = 'rgba(107,92,231,0.65)';
+    } else {
+      colour = '#7C3AED';
+      glow   = 'rgba(124,58,237,0.7)';
+    }
+
+    bar.style.cssText = `
+      transform-origin: bottom center;
+      height: ${baseH}%;
+      background: linear-gradient(180deg, ${colour} 0%, ${colour}33 100%);
+      filter: drop-shadow(0 0 4px ${glow});
+      animation-delay: ${delay}s;
+      animation-duration: ${duration}s;
+    `;
+
+    container.appendChild(bar);
+  }
+})();
+
+/* ── Dashboard: animate progress bars + health check ── */
+function dbInitProgressBars() {
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const eff = document.getElementById('progEff');
+      const yam = document.getElementById('progYam');
+      if (eff) eff.style.width = '93.34%';
+      if (yam) yam.style.width = '88.5%';
+    }, 300);
+  });
+  dbCheckHealth();
+}
+
+async function dbCheckHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const loaded = data.models_loaded;
+    const allLoaded = loaded.yamnet && loaded.yamnet_hub && loaded.spectrogram;
+    const liveEl = document.querySelector('.db-topbar-live');
+    if (liveEl) {
+      liveEl.innerHTML = `<div class="db-live-dot" style="background:${allLoaded ? '#10B981' : '#F59E0B'};box-shadow:0 0 6px ${allLoaded ? 'rgba(16,185,129,0.8)' : 'rgba(245,158,11,0.8)'};"></div>${allLoaded ? 'Models Ready' : 'Loading Models…'}`;
+    }
+  } catch (_) {
+    const liveEl = document.querySelector('.db-topbar-live');
+    if (liveEl) liveEl.innerHTML = '<div class="db-live-dot" style="background:#EF4444;box-shadow:0 0 6px rgba(239,68,68,0.8);"></div>API Offline';
+  }
+}
+
+/* ── Dashboard: file upload handlers ────────────────── */
+let dbSessionCount = 0;
+const dbRecentItems = [];
+
+function dbDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dbUploadZone').classList.add('drag-over');
+}
+function dbDragLeave(e) {
+  document.getElementById('dbUploadZone').classList.remove('drag-over');
+}
+function dbDrop(e) {
+  e.preventDefault();
+  document.getElementById('dbUploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) dbFileSelected(file);
+}
+
+const API_BASE = 'http://localhost:8000/api';
+
+async function dbFileSelected(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext !== 'wav' && ext !== 'png') {
+    alert('Please upload a .wav or .png file.');
+    return;
+  }
+
+  document.getElementById('dbUploadTitle').textContent = file.name;
+  document.getElementById('dbUploadSub').textContent =
+    (file.size / 1024).toFixed(1) + ' KB · ' + ext.toUpperCase();
+
+  document.getElementById('dbLoading').classList.add('visible');
+  document.getElementById('dbResults').classList.remove('visible');
+  document.getElementById('dbLoadingText').textContent =
+    ext === 'wav' ? 'Analyzing audio…' : 'Reading spectrogram…';
+
+  const endpoint = ext === 'wav'
+    ? `${API_BASE}/predict/wav`
+    : `${API_BASE}/predict/spectrogram`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch(endpoint, { method: 'POST', body: formData });
+    document.getElementById('dbLoading').classList.remove('visible');
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      dbShowError(err.detail || `Server error ${res.status}`);
+      return;
+    }
+
+    const result = await res.json();
+    // API: { prediction, confidence (0–1), top5:[{label,confidence}], model, filename, input_type, timestamp }
+    const modelLabel = result.model === 'yamnet' ? 'YAMNet' : 'EfficientNetB3';
+    const normalized = result.top5.map(item => ({
+      label: item.label,
+      pct:   item.confidence * 100,
+    }));
+    dbShowResults(normalized, modelLabel, result.filename);
+
+  } catch (e) {
+    document.getElementById('dbLoading').classList.remove('visible');
+    dbShowError('Cannot reach API — is the backend running on :8000?');
+  }
+}
+
+function dbShowError(msg) {
+  document.getElementById('dbResults').classList.add('visible');
+  document.getElementById('dbModelLabel').textContent = 'Error';
+  document.getElementById('dbPredMain').textContent = 'Request failed';
+  const badge = document.getElementById('dbConfBadge');
+  badge.style.color = '#EF4444';
+  badge.textContent = msg;
+  document.getElementById('dbPredList').innerHTML = '';
+}
+
+function dbShowResults(results, model, filename) {
+  const top = results[0];
+  document.getElementById('dbModelLabel').textContent = 'Model · ' + model;
+  document.getElementById('dbPredMain').textContent = top.label;
+  const confBadge = document.getElementById('dbConfBadge');
+  const confColor = top.pct > 80 ? '#10B981' : top.pct > 50 ? '#F59E0B' : '#EF4444';
+  confBadge.style.color = confColor;
+  confBadge.textContent = top.pct.toFixed(1) + '% confidence';
+
+  const list = document.getElementById('dbPredList');
+  list.innerHTML = '';
+  results.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'db-pred-row';
+    row.style.animationDelay = (i * 0.1) + 's';
+    row.style.animationDelay = (i * 0.08) + 's';
+    row.innerHTML = `
+      <span class="db-pred-rank">${i + 1}</span>
+      <span class="db-pred-label">${r.label}</span>
+      <div class="db-pred-bar-wrap">
+        <div class="db-pred-bar-fill" style="width:0%" data-w="${r.pct}%"></div>
+      </div>
+      <span class="db-pred-pct">${r.pct.toFixed(1)}%</span>`;
+    list.appendChild(row);
+  });
+
+  document.getElementById('dbResults').classList.add('visible');
+
+  // Animate bars
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      list.querySelectorAll('.db-pred-bar-fill').forEach(bar => {
+        bar.style.width = bar.dataset.w;
+      });
+    }, 60);
+  });
+
+  // Update session counter
+  dbSessionCount++;
+  document.getElementById('statTotal').textContent = dbSessionCount;
+
+  // Sync history table
+  histAddRow(filename, model, top.label, top.pct);
+
+  // Add to recent
+  const isViolet = model === 'EfficientNetB3';
+  dbRecentItems.unshift({
+    name: filename.length > 18 ? filename.slice(0, 16) + '…' : filename,
+    model: model,
+    pct: top.pct.toFixed(0) + '%',
+    violet: isViolet,
+  });
+  if (dbRecentItems.length > 5) dbRecentItems.pop();
+  dbUpdateRecent();
+}
+
+function dbUpdateRecent() {
+  const el = document.getElementById('dbRecentList');
+  if (dbRecentItems.length === 0) {
+    el.innerHTML = '<div class="db-empty-recent">No analyses yet</div>';
+    return;
+  }
+  el.innerHTML = dbRecentItems.map(item => `
+    <div class="db-recent-row">
+      <div class="db-recent-dot"
+           style="background:${item.violet ? 'var(--accent-violet)' : 'var(--accent-cyan)'};
+                  box-shadow:0 0 5px ${item.violet ? 'rgba(124,58,237,0.7)' : 'rgba(0,212,255,0.7)'};"></div>
+      <div class="db-recent-info">
+        <div class="db-recent-name">${item.name}</div>
+        <div class="db-recent-meta">${item.model}</div>
+      </div>
+      <div class="db-recent-pct">${item.pct}</div>
+    </div>`).join('');
+}
+
+function dbReset() {
+  document.getElementById('dbResults').classList.remove('visible');
+  document.getElementById('dbLoading').classList.remove('visible');
+  document.getElementById('dbUploadTitle').textContent = 'Drop your file here';
+  document.getElementById('dbUploadSub').textContent = 'or click to browse';
+  document.getElementById('dbFileInput').value = '';
+}
+
+/* ── Enhancement 1: Mouse-reactive particle system ──── */
+(function initParticles() {
+  const canvas = document.getElementById('particleCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let mouseX = -9999, mouseY = -9999;
+
+  function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+  });
+  canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
+
+  const PARTICLE_COUNT = 110;
+  function mkParticle() {
+    return {
+      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.4,
+      vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+      a: Math.random() * 0.45 + 0.08,
+      c: Math.random() > 0.55 ? '#7C3AED' : '#00D4FF',
+    };
+  }
+  const pts = Array.from({ length: PARTICLE_COUNT }, mkParticle);
+
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pts.forEach(p => {
+      // Attraction toward cursor
+      const dx = mouseX - p.x, dy = mouseY - p.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 160 && dist > 0) {
+        const force = (160 - dist) / 160 * 0.018;
+        p.vx += dx / dist * force; p.vy += dy / dist * force;
+      }
+      // Damping
+      p.vx *= 0.97; p.vy *= 0.97;
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < -5 || p.x > canvas.width+5 || p.y < -5 || p.y > canvas.height+5)
+        Object.assign(p, mkParticle(), { x: Math.random()*canvas.width, y: Math.random()*canvas.height });
+      ctx.globalAlpha = p.a;
+      ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ── Enhancement 1b: Hero parallax on scroll ─────────── */
+window.addEventListener('scroll', () => {
+  const hero = document.querySelector('.hero');
+  if (!hero) return;
+  const heroContent = hero.querySelectorAll('[style*="z-index:2"]');
+  heroContent.forEach(el => {
+    el.style.transform = `translateY(${window.scrollY * 0.18}px)`;
+  });
+}, { passive: true });
+
+/* ── Enhancement 3: Navbar scroll class ─────────────── */
+window.addEventListener('scroll', () => {
+  document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 50);
+}, { passive: true });
+
+/* ── Enhancement 5: CTA ripple ──────────────────────── */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.cta-btn');
+  if (!btn) return;
+  const r = btn.getBoundingClientRect();
+  const rip = document.createElement('span');
+  rip.className = 'ripple-wave';
+  const size = 20;
+  rip.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-r.left-size/2}px;top:${e.clientY-r.top-size/2}px;`;
+  btn.appendChild(rip);
+  rip.addEventListener('animationend', () => rip.remove());
+});
+
+/* ── Enhancement 7 + 2: IntersectionObserver ─────────── */
+(function initObservers() {
+  // Section reveal
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('revealed'); revealObs.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.section-reveal').forEach(el => revealObs.observe(el));
+
+  // Performance counters + bars
+  const perfObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      // Animate counters
+      e.target.querySelectorAll('[data-target]').forEach(el => {
+        const target = parseFloat(el.dataset.target);
+        const prefix = el.dataset.prefix || '';
+        const suffix = el.dataset.suffix || '';
+        const isInt = Number.isInteger(target);
+        const dur = 1500, start = performance.now();
+        function step(now) {
+          const t = Math.min((now - start) / dur, 1);
+          const ease = 1 - Math.pow(1 - t, 3);
+          const val = target * ease;
+          el.textContent = prefix + (isInt ? Math.round(val) : val.toFixed(2)) + suffix;
+          if (t < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+      // Animate bars
+      e.target.querySelectorAll('.perf-bar-fill').forEach(bar => {
+        setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 200);
+      });
+      perfObs.unobserve(e.target);
+    });
+  }, { threshold: 0.25 });
+  const perfSection = document.getElementById('perfSection');
+  if (perfSection) perfObs.observe(perfSection);
+})();
+</script>
+
+</body>
+</html>
