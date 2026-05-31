@@ -17,8 +17,7 @@ env/
 new-esc50/
 new-esc50-augmented/
 
-# Trained model — large binary (105 MB, use Git LFS or download from Releases)
-Backend/Models/spectrogram_model.keras
+# Trained model tracked via Git LFS (.gitattributes)
 
 # Database — ephemeral, generated at runtime
 Backend/neurosound.db
